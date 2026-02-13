@@ -13,13 +13,8 @@ export default function Home() {
   const [duration, setDuration] = useState('3 Months');
   const [difficulty, setDifficulty] = useState('Intermediate');
   
-  // Sample recent activity data - in production, this would come from localStorage or API
-  const [recentActivity] = useState([
-    { topic: 'Python', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) }, // 2 hours ago
-    { topic: 'Guitar', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) }, // 5 hours ago
-    { topic: 'Web Development', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // 1 day ago
-    { topic: 'Machine Learning', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }, // 3 days ago
-  ]);
+  // Recent activity data - loaded from localStorage or empty array
+  const [recentActivity, setRecentActivity] = useState<Array<{ topic: string; timestamp: Date }>>([]);
 
   // Get icon letter from topic name
   const getTopicIcon = (topic: string) => {
@@ -52,6 +47,23 @@ export default function Home() {
     } else {
       // Show nickname prompt if not set
       setShowNicknamePrompt(true);
+    }
+    
+    // Load recent activity from localStorage
+    const savedActivity = localStorage.getItem('progath_recent_activity');
+    if (savedActivity) {
+      try {
+        const parsed = JSON.parse(savedActivity);
+        // Convert timestamp strings back to Date objects
+        const activities = parsed.map((activity: { topic: string; timestamp: string }) => ({
+          topic: activity.topic,
+          timestamp: new Date(activity.timestamp)
+        }));
+        setRecentActivity(activities);
+      } catch (error) {
+        console.error('Error loading recent activity:', error);
+        setRecentActivity([]);
+      }
     }
     
     // Get user's location
@@ -238,26 +250,35 @@ export default function Home() {
           {/* Recent Activity History */}
           <div className="border-t border-zinc-800 pt-6">
             <div className="text-[10px] uppercase text-zinc-400 font-bold tracking-widest mb-4">Recent Activity</div>
-            <div className="space-y-3">
-              {recentActivity.map((activity, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
-                >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold border border-blue-500/30 flex-shrink-0">
-                    {getTopicIcon(activity.topic)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-xs font-medium truncate group-hover:text-blue-400 transition-colors">
-                      {activity.topic}
+            {recentActivity.length > 0 ? (
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold border border-blue-500/30 flex-shrink-0">
+                      {getTopicIcon(activity.topic)}
                     </div>
-                    <div className="text-[10px] text-zinc-500 font-mono">
-                      {formatTimestamp(activity.timestamp)}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-xs font-medium truncate group-hover:text-blue-400 transition-colors">
+                        {activity.topic}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 font-mono">
+                        {formatTimestamp(activity.timestamp)}
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 px-4">
+                <div className="text-zinc-500 text-xs leading-relaxed">
+                  <p className="mb-1">No recent activity</p>
+                  <p className="text-zinc-600">Get your customized plan ready first</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         </nav>
         
