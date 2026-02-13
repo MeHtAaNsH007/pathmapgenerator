@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 
 export default function Home() {
   const [showGuide, setShowGuide] = useState(false);
@@ -272,6 +273,16 @@ export default function Home() {
       return;
     }
     startRecognition();
+  };
+
+  const handleBeginConstruction = async () => {
+    const payload = {
+      nickname,
+      location,
+      latitude: coordinates.lat,
+      longitude: coordinates.lon,
+    };
+    await supabase.from('profiles').insert([payload]);
   };
 
   // Handle nickname submission
@@ -681,7 +692,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <button className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 active:scale-95 transition-all">
+              <button onClick={handleBeginConstruction} className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 active:scale-95 transition-all">
                 Begin Construction
               </button>
             </div>
