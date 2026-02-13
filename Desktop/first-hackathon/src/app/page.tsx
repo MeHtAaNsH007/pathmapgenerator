@@ -156,7 +156,7 @@ export default function Home() {
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
             <div className="text-blue-500 font-bold mb-2 tracking-widest text-xs uppercase text-center">Hey {nickname}, welcome to PROGATH</div>
             <h2 className="text-3xl font-black mb-4 tracking-tight text-white text-center">User Guide</h2>
-            <div className="space-y-4 mb-8 text-left">
+            <div className="space-y-4 mb-8">
               {[1, 2, 3].map((num) => (
                 <div key={num} className="flex gap-4">
                   <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-white">{num}</div>
@@ -198,7 +198,7 @@ export default function Home() {
         <div className="mt-auto pt-6 border-t border-zinc-800">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-950/50 border border-zinc-800/50 group">
             <div className="relative">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/30">{nickname ? nickname.charAt(0).toUpperCase() : '?'}</div>
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">{nickname ? nickname.charAt(0).toUpperCase() : '?'}</div>
               <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-green-500 border-2 border-zinc-950"></div>
             </div>
             <div className="flex-1 min-w-0">
@@ -219,16 +219,41 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="text-2xl font-bold">Welcome to PROGATH</div>
-          <div className="text-sm text-zinc-400">This is the main content area</div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-xl w-full space-y-10">
+            <h1 className="text-7xl font-black tracking-tighter bg-gradient-to-b from-gray-900 to-gray-400 bg-clip-text text-transparent">PROGATH</h1>
+            <p className="text-xl bg-gradient-to-r from-gray-900 to-gray-400 bg-clip-text text-transparent font-light tracking-widest uppercase mt-4">The Smart Path</p>
+            <div className="space-y-4 relative">
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Architect your learning path..." className="w-full bg-zinc-900 border border-zinc-800 text-white px-6 py-5 pr-24 rounded-2xl focus:border-blue-500 transition-all outline-none" />
+              <div className="absolute right-4 top-5 flex gap-2">
+                <button onClick={toggleMic} className={`p-1 ${isListening ? 'text-red-500 animate-pulse' : 'text-zinc-400'}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v7m5-5.61A9 9 0 0012 3v.01M12 12v.01" /></svg></button>
+                <button onClick={() => setShowSettings(!showSettings)} className="text-zinc-400 hover:text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg></button>
+              </div>
+              {showSettings && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-xl p-4 z-50 flex gap-4">
+                  <div className="flex-1"><label className="text-[10px] text-zinc-500 uppercase font-bold block mb-2">Duration</label><select value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full bg-zinc-800 border-none text-white text-xs rounded-lg p-2"><option>1 Month</option><option>3 Months</option><option>6 Months</option></select></div>
+                  <div className="flex-1"><label className="text-[10px] text-zinc-500 uppercase font-bold block mb-2">Difficulty</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full bg-zinc-800 border-none text-white text-xs rounded-lg p-2"><option>Novice</option><option>Intermediate</option><option>Master</option></select></div>
+                </div>
+              )}
+              <button className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 transition-all">Begin Construction</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              {['Web Dev', 'Data Science', 'UI/UX Design'].map((path) => (
+                <button key={path} className="bg-zinc-900/50 border border-zinc-800 p-6 rounded-xl hover:border-blue-500 transition-all text-sm font-semibold">{path}</button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        <footer className="h-12 border-t border-zinc-800 flex items-center justify-between px-6 text-[10px] text-zinc-500 font-mono">
+          <div className="flex gap-4 items-center">
+            <div className="flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div><span>AI ENGINE: READY</span></div>
+            <span>LOC: {location}</span>
+            <span>COORDS: {coordinates.lat.toFixed(4)}°N, {coordinates.lon.toFixed(4)}°E</span>
+          </div>
+          <div>TIME: {currentTime.toLocaleTimeString('en-US', { hour12: false })}</div>
+        </footer>
       </main>
     </div>
   );
 }
-
-
-
-
-
