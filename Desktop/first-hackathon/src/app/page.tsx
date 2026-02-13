@@ -5,10 +5,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white p-6 font-sans">
       <div className="max-w-3xl w-full text-center space-y-8">
         <header className="space-y-2">
-          <h1 className="text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-white to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-7xl md:text-8xl font-black tracking-tighter bg-gradient-to-b from-gray-900 to-gray-400 bg-clip-text text-transparent">
             PROGATH
           </h1>
-          <p className="text-xl text-gray-500 font-light tracking-widest uppercase">
+          <p className="text-xl bg-gradient-to-r from-gray-900 to-gray-400 bg-clip-text text-transparent font-light tracking-widest uppercase">
             The Smart Path
           </p>
         </header>
