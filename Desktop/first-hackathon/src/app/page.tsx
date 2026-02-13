@@ -15,6 +15,15 @@ export default function Home() {
   
   // Recent activity data - loaded from localStorage or empty array
   const [recentActivity, setRecentActivity] = useState<Array<{ topic: string; timestamp: Date }>>([]);
+  
+  // Battery & network for header
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [connectionStrength, setConnectionStrength] = useState<'none' | 'low' | 'good'>('good');
+
+  // Search bar
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
 
   // Get icon letter from topic name
   const getTopicIcon = (topic: string) => {
@@ -124,6 +133,84 @@ export default function Home() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Battery level (when available, e.g. some browsers on supported devices)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'getBattery' in navigator) {
+      (navigator as Navigator & { getBattery(): Promise<{ level: number; addEventListener: (t: string, h: () => void) => void }> })
+        .getBattery()
+        .then((battery) => {
+          setBatteryLevel(Math.round(battery.level * 100));
+          battery.addEventListener('levelchange', () => setBatteryLevel(Math.round(battery.level * 100)));
+        })
+        .catch(() => setBatteryLevel(null));
+    } else {
+      setBatteryLevel(null);
+    }
+  }, []);
+
+  // Network connectivity and strength
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => {
+      setIsOnline(false);
+      setConnectionStrength('none');
+    };
+
+    const conn = typeof navigator !== 'undefined' ? (navigator as Navigator & { connection?: { effectiveType?: string } }).connection : undefined;
+    const updateStrength = () => {
+      if (!navigator.onLine) {
+        setConnectionStrength('none');
+        return;
+      }
+      const effectiveType = conn?.effectiveType;
+      if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+        setConnectionStrength('low');
+      } else {
+        setConnectionStrength('good');
+      }
+    };
+
+    setIsOnline(navigator.onLine);
+    updateStrength();
+
+    window.addEventListener('online', () => {
+      setIsOnline(true);
+      updateStrength();
+    });
+    window.addEventListener('offline', handleOffline);
+    conn?.addEventListener?.('change', updateStrength);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      conn?.removeEventListener?.('change', updateStrength);
+    };
+  }, []);
+
+  // Voice input (Speech Recognition)
+  const toggleMic = () => {
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+    const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      setSearchQuery((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.start();
+  };
 
   // Handle nickname submission
   const handleNicknameSubmit = () => {
@@ -318,7 +405,59 @@ export default function Home() {
       <main className="flex-1 flex flex-col bg-[#050505]">
         <header className="h-16 border-b border-zinc-800 flex items-center justify-between px-8">
           <div className="text-xs text-zinc-400 tracking-widest uppercase">System Status: Optimal</div>
-          <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700"></div>
+          
+          <div className="flex items-center gap-5">
+            {/* Battery */}
+            {batteryLevel !== null && (
+              <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-mono">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>{batteryLevel}%</span>
+              </div>
+            )}
+            {batteryLevel === null && (
+              <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-mono" title="Battery API not available">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                <span>--%</span>
+              </div>
+            )}
+
+            {/* WiFi / Network */}
+            <div className="flex items-center gap-1.5" title={isOnline ? `Connection: ${connectionStrength}` : 'No connection'}>
+              {isOnline ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-5 w-5 ${connectionStrength === 'good' ? 'text-green-500' : connectionStrength === 'low' ? 'text-yellow-500' : 'text-zinc-500'}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {connectionStrength === 'good' && (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                    </>
+                  )}
+                  {connectionStrength === 'low' && (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0" />
+                    </>
+                  )}
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              )}
+              <span className={`text-xs font-mono hidden sm:inline ${isOnline ? (connectionStrength === 'good' ? 'text-green-500' : connectionStrength === 'low' ? 'text-yellow-500' : 'text-zinc-500') : 'text-red-500'}`}>
+                {isOnline ? (connectionStrength === 'good' ? 'Connected' : 'Low') : 'Offline'}
+              </span>
+            </div>
+
+            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex-shrink-0"></div>
+          </div>
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center p-6">
@@ -333,9 +472,21 @@ export default function Home() {
               <div className="relative settings-dropdown-container">
                 <input 
                   type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Architect your learning path..." 
-                  className="w-full bg-zinc-900 border border-zinc-800 text-white px-6 py-5 pr-12 rounded-2xl focus:outline-none focus:border-blue-500 transition-all shadow-inner"
+                  className="w-full bg-zinc-900 border border-zinc-800 text-white px-6 py-5 pr-24 rounded-2xl focus:outline-none focus:border-blue-500 transition-all shadow-inner"
                 />
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={`absolute right-12 top-1/2 -translate-y-1/2 p-1 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-zinc-400 hover:text-blue-400'}`}
+                  aria-label={isListening ? 'Stop listening' : 'Voice input'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v7m5-5.61A9 9 0 0012 3v.01M12 12v.01" />
+                  </svg>
+                </button>
                 <button
                   onClick={() => setShowSettings(!showSettings)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-blue-400 transition-colors p-1"
