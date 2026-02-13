@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 
 export default function Home() {
   const [showGuide, setShowGuide] = useState(false);
+  const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [nicknameInput, setNicknameInput] = useState('');
   const [location, setLocation] = useState('PUNJAB,INDIA');
   const [coordinates, setCoordinates] = useState({ lat: 30.7333, lon: 76.7794 }); // Default Punjab coordinates
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -41,7 +44,15 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setShowGuide(true);
+    // Check for saved nickname in localStorage
+    const savedNickname = localStorage.getItem('progath_nickname');
+    if (savedNickname) {
+      setNickname(savedNickname);
+      setShowGuide(true);
+    } else {
+      // Show nickname prompt if not set
+      setShowNicknamePrompt(true);
+    }
     
     // Get user's location
     if (navigator.geolocation) {
@@ -102,6 +113,17 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle nickname submission
+  const handleNicknameSubmit = () => {
+    const trimmedNickname = nicknameInput.trim();
+    if (trimmedNickname) {
+      setNickname(trimmedNickname);
+      localStorage.setItem('progath_nickname', trimmedNickname);
+      setShowNicknamePrompt(false);
+      setShowGuide(true); // Show guide after nickname is set
+    }
+  };
+
   // Close settings dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -122,6 +144,45 @@ export default function Home() {
 
   return (
     <div className="relative flex h-screen bg-black text-white overflow-hidden font-sans">
+      
+      {/* --- NICKNAME PROMPT MODAL --- */}
+      {showNicknamePrompt && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <div className="text-blue-500 font-bold mb-2 tracking-widest text-xs uppercase">Welcome to PROGATH</div>
+            <h2 className="text-3xl font-black mb-4 tracking-tight text-white">Choose Your Nickname</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Personalize your workspace with a nickname. This will be displayed in your profile.
+            </p>
+            
+            <div className="space-y-4 mb-6">
+              <input
+                type="text"
+                value={nicknameInput}
+                onChange={(e) => setNicknameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleNicknameSubmit();
+                  }
+                }}
+                placeholder="Enter your nickname..."
+                className="w-full bg-zinc-800 border border-zinc-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-blue-500 transition-all"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleNicknameSubmit}
+                disabled={!nicknameInput.trim()}
+                className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* --- USER GUIDE MODAL --- */}
       {showGuide && (
@@ -206,7 +267,7 @@ export default function Home() {
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/30">
-                M
+                {nickname ? nickname.charAt(0).toUpperCase() : '?'}
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-green-500 border-2 border-zinc-950"></div>
             </div>
@@ -214,7 +275,7 @@ export default function Home() {
             {/* User Info */}
             <div className="flex-1 min-w-0">
               <div className="text-white font-semibold text-sm truncate group-hover:text-blue-400 transition-colors">
-                Masterwayne
+                {nickname || 'Guest'}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.3)] animate-pulse">
