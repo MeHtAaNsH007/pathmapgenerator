@@ -25,6 +25,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
 
+  // Location prompt (show our message before browser permission)
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+
   // Get icon letter from topic name
   const getTopicIcon = (topic: string) => {
     return topic.charAt(0).toUpperCase();
@@ -50,11 +53,16 @@ export default function Home() {
   useEffect(() => {
     // Check for saved nickname in localStorage
     const savedNickname = localStorage.getItem('progath_nickname');
+    const locationPromptSeen = localStorage.getItem('progath_location_prompt_seen');
     if (savedNickname) {
       setNickname(savedNickname);
-      setShowGuide(true);
+      // Show location prompt once if never seen, else show guide
+      if (navigator.geolocation && !locationPromptSeen) {
+        setShowLocationPrompt(true);
+      } else {
+        setShowGuide(true);
+      }
     } else {
-      // Show nickname prompt if not set
       setShowNicknamePrompt(true);
     }
     
@@ -75,55 +83,57 @@ export default function Home() {
       }
     }
     
-    // Get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            setCoordinates({ lat: latitude, lon: longitude });
-            
-            // Use Nominatim API for reverse geocoding (free, no API key needed)
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-            );
-            const data = await response.json();
-            
-            if (data.address) {
-              const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
-              const state = data.address.state || data.address.region || '';
-              const country = data.address.country || '';
-              
-              let locationStr = '';
-              if (city && state) {
-                locationStr = `${city.toUpperCase()},${state.toUpperCase()}`;
-              } else if (city) {
-                locationStr = `${city.toUpperCase()},${country.toUpperCase()}`;
-              } else if (state) {
-                locationStr = `${state.toUpperCase()},${country.toUpperCase()}`;
-              } else {
-                locationStr = country ? country.toUpperCase() : 'PUNJAB,INDIA';
-              }
-              
-              setLocation(locationStr || 'PUNJAB,INDIA');
-            } else {
-              setLocation('PUNJAB,INDIA');
-            }
-          } catch (error) {
-            console.error('Error fetching location:', error);
-            setLocation('PUNJAB,INDIA');
-          }
-        },
-        (error) => {
-          // Permission denied or error - use default
-          setLocation('PUNJAB,INDIA');
-        }
-      );
-    } else {
-      // Geolocation not supported - use default
+    if (!navigator.geolocation) {
       setLocation('PUNJAB,INDIA');
     }
   }, []);
+
+  const requestLocation = () => {
+    setShowLocationPrompt(false);
+    localStorage.setItem('progath_location_prompt_seen', 'true');
+    if (!navigator.geolocation) {
+      setLocation('PUNJAB,INDIA');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          setCoordinates({ lat: latitude, lon: longitude });
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+          );
+          const data = await response.json();
+          if (data.address) {
+            const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
+            const state = data.address.state || data.address.region || '';
+            const country = data.address.country || '';
+            let locationStr = '';
+            if (city && state) locationStr = `${city.toUpperCase()},${state.toUpperCase()}`;
+            else if (city) locationStr = `${city.toUpperCase()},${country.toUpperCase()}`;
+            else if (state) locationStr = `${state.toUpperCase()},${country.toUpperCase()}`;
+            else locationStr = country ? country.toUpperCase() : 'PUNJAB,INDIA';
+            setLocation(locationStr || 'PUNJAB,INDIA');
+          } else setLocation('PUNJAB,INDIA');
+        } catch (error) {
+          console.error('Error fetching location:', error);
+          setLocation('PUNJAB,INDIA');
+        }
+        setShowGuide(true);
+      },
+      () => {
+        setLocation('PUNJAB,INDIA');
+        setShowGuide(true);
+      }
+    );
+  };
+
+  const skipLocation = () => {
+    setShowLocationPrompt(false);
+    localStorage.setItem('progath_location_prompt_seen', 'true');
+    setLocation('PUNJAB,INDIA');
+    setShowGuide(true);
+  };
 
   // Update clock every second
   useEffect(() => {
@@ -220,7 +230,12 @@ export default function Home() {
       setNickname(trimmedNickname);
       localStorage.setItem('progath_nickname', trimmedNickname);
       setShowNicknamePrompt(false);
-      setShowGuide(true); // Show guide after nickname is set
+      // Show location prompt if we haven't asked yet, else show guide
+      if (navigator.geolocation && !localStorage.getItem('progath_location_prompt_seen')) {
+        setShowLocationPrompt(true);
+      } else {
+        setShowGuide(true);
+      }
     }
   };
 
@@ -278,6 +293,31 @@ export default function Home() {
                 className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- LOCATION PROMPT --- */}
+      {showLocationPrompt && (
+        <div className="absolute inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <p className="text-white text-center text-lg mb-6">
+              progath.ai wants to know your location
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={requestLocation}
+                className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all"
+              >
+                Allow
+              </button>
+              <button
+                onClick={skipLocation}
+                className="w-full bg-transparent text-zinc-400 text-sm hover:text-white transition-all"
+              >
+                Use default (Punjab, India)
               </button>
             </div>
           </div>
