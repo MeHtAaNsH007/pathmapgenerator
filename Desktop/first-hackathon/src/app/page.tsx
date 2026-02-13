@@ -32,7 +32,7 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('Intermediate');
   
   // Recent activity data - loaded from localStorage or empty array
-  const [recentActivity, setRecentActivity] = useState<Array<{ topic: string; timestamp: Date }>>(() => {
+  const [recentActivity] = useState<Array<{ topic: string; timestamp: Date }>>(() => {
     if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem('progath_recent_activity');
     if (!saved) return [];
