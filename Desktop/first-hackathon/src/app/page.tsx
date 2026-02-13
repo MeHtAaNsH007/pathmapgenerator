@@ -486,9 +486,10 @@ export default function Home() {
               <span className="text-green-400">AI Engine: Ready</span>
             </div>
             
-            {/* Location Coordinates */}
-            <div className="text-zinc-500">
-              COORDS: {coordinates.lat.toFixed(4)}°N, {coordinates.lon.toFixed(4)}°E
+            {/* Location & Coordinates */}
+            <div className="text-zinc-500 flex items-center gap-4">
+              <span>LOC: {location}</span>
+              <span>COORDS: {coordinates.lat.toFixed(4)}°N, {coordinates.lon.toFixed(4)}°E</span>
             </div>
           </div>
           
