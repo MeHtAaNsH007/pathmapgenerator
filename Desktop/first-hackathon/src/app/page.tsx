@@ -27,6 +27,7 @@ export default function Home() {
 
   // Location prompt (show our message before browser permission)
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showMicPrompt, setShowMicPrompt] = useState(false);
 
   // Get icon letter from topic name
   const getTopicIcon = (topic: string) => {
@@ -198,14 +199,36 @@ export default function Home() {
     };
   }, []);
 
-  // Voice input (Speech Recognition)
-  const toggleMic = () => {
-    if (isListening) {
-      setIsListening(false);
-      return;
-    }
+  const startRecognition = () => {
     const win = typeof window !== 'undefined' ? window : null;
-    const SR = win && ((win as unknown as { SpeechRecognition?: new () => { start(): void; stop(): void; onstart: () => void; onend: () => void; onresult: (e: unknown) => void; onerror: () => void; continuous: boolean; interimResults: boolean; lang: string } }).SpeechRecognition ?? (win as unknown as { webkitSpeechRecognition?: new () => { start(): void; stop(): void; onstart: () => void; onend: () => void; onresult: (e: unknown) => void; onerror: () => void; continuous: boolean; interimResults: boolean; lang: string } }).webkitSpeechRecognition);
+    const SR =
+      win &&
+      ((win as unknown as {
+        SpeechRecognition?: new () => {
+          start(): void;
+          stop(): void;
+          onstart: () => void;
+          onend: () => void;
+          onresult: (e: unknown) => void;
+          onerror: () => void;
+          continuous: boolean;
+          interimResults: boolean;
+          lang: string;
+        };
+      }).SpeechRecognition ??
+        (win as unknown as {
+          webkitSpeechRecognition?: new () => {
+            start(): void;
+            stop(): void;
+            onstart: () => void;
+            onend: () => void;
+            onresult: (e: unknown) => void;
+            onerror: () => void;
+            continuous: boolean;
+            interimResults: boolean;
+            lang: string;
+          };
+        }).webkitSpeechRecognition);
     if (!SR || !win) return;
     const recognition = new SR();
     recognition.continuous = false;
@@ -214,13 +237,41 @@ export default function Home() {
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onresult = (event: unknown) => {
-      const e = event as { results: { length: number; [i: number]: { [j: number]: { transcript: string } } } };
+      const e = event as {
+        results: {
+          length: number;
+          [i: number]: { [j: number]: { transcript: string } };
+        };
+      };
       const last = e.results[e.results.length - 1];
       const transcript = last?.[0]?.transcript ?? '';
       setSearchQuery((prev) => (prev ? `${prev} ${transcript}` : transcript));
     };
     recognition.onerror = () => setIsListening(false);
     recognition.start();
+  };
+
+  const handleMicAllow = () => {
+    localStorage.setItem('progath_mic_prompt_seen', 'true');
+    setShowMicPrompt(false);
+    startRecognition();
+  };
+
+  const handleMicDeny = () => {
+    setShowMicPrompt(false);
+  };
+
+  const toggleMic = () => {
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+    const seen = localStorage.getItem('progath_mic_prompt_seen');
+    if (!seen) {
+      setShowMicPrompt(true);
+      return;
+    }
+    startRecognition();
   };
 
   // Handle nickname submission
@@ -324,6 +375,30 @@ export default function Home() {
         </div>
       )}
       
+      {showMicPrompt && (
+        <div className="absolute inset-0 z-[55] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <p className="text-white text-center text-lg mb-6">
+              progath wants to access your microphone
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleMicAllow}
+                className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-zinc-200 transition-all"
+              >
+                Allow
+              </button>
+              <button
+                onClick={handleMicDeny}
+                className="w-full bg-transparent text-zinc-400 text-sm hover:text-white transition-all"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* --- USER GUIDE MODAL --- */}
       {showGuide && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -336,11 +411,11 @@ export default function Home() {
             <div className="space-y-4 mb-8">
               <div className="flex gap-4">
                 <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-white">1</div>
-                <p className="text-zinc-300 text-sm">Enter any skill or topic in the central "Construction" bar.</p>
+                <p className="text-zinc-300 text-sm">Enter any skill or topic in the central &quot;Construction&quot; bar.</p>
               </div>
               <div className="flex gap-4">
                 <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-white">2</div>
-                <p className="text-zinc-300 text-sm">Click "Begin" to let PROGATH AI architect your roadmap.</p>
+                <p className="text-zinc-300 text-sm">Click &quot;Begin&quot; to let PROGATH AI architect your roadmap.</p>
               </div>
               <div className="flex gap-4">
                 <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-white">3</div>
