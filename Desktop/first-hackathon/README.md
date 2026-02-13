@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+  Al-Powered Personalized Learning Path Generator
+                                                            {PROGATH- The Smart Path}
 
-## Getting Started
+AIM
+ utilize generative ai to craft learning paths for Students.
 
-First, run the development server:
+eliminates the Paradox of choice
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+ identifies and target the strengths and weaknesses of a learner and provide a customiZed path.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Provides quality level education / learning guidance regardless of their location or background .
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+DESCRIPTION
+ What will I make? - A simple website where a student or user types in any topic they want to learn(eg- web development, accounting etc)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Instead of showing thousands of random videos the site will show a clear week based plans into small daily tasks.
 
-## Learn More
+Why is there a need for this? - Too Much Choice: When a student tries to  search "Learn Python" on Google, he/she gets millions of  results. Most students get confused and give up before they even start. This site picks the path for them.
 
-To learn more about Next.js, take a look at the following resources:
+Fear of Starting: Many beginners feel "blank" when starting a new subject. Having a pre-made list of steps removes that fear and gives them confidence.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Lack of Structure: Most people try to learn everything at once. This tool provides a logical order(Learning the ABCs before writing a novel).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+APPROACH
+ 
+Single-Platform Development: I  will  be using Next.js as my primary framework because it handles both the website design and the background logic in one place.
 
-## Deploy on Vercel
+UI Design: To save time on styling,I will use Tailwind CSS and pre-made components, allowing me to create a professional-looking interface in a limited time.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+AI Integration: The website will connect to a standard Generative AI API to instantly turn a user's topic into a structured few weeks learning plan.  
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+TOOLS THAT WILL BE USED FOR THE MAKING OF THIS PROJECT
+
+
+— Next.js: Acting as both the frontend (what users see) and the backend (the logic). 
+ 
+—Tailwind CSS: To style the website quickly.
+
+— Shadcn UI: provides pre-made professional components.
+
+— Google Gemini: provide the structured learning steps.
+  
+— Cursor: primary code editor.
+
+— Vercel: To host the website online.
