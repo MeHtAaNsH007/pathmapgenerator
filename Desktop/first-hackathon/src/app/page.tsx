@@ -157,7 +157,7 @@ export default function Home() {
       setConnectionStrength('none');
     };
 
-    const conn = typeof navigator !== 'undefined' ? (navigator as Navigator & { connection?: { effectiveType?: string } }).connection : undefined;
+    const conn = typeof navigator !== 'undefined' ? (navigator as Navigator & { connection?: { effectiveType?: string; addEventListener?: (type: string, fn: () => void) => void; removeEventListener?: (type: string, fn: () => void) => void } }).connection : undefined;
     const updateStrength = () => {
       if (!navigator.onLine) {
         setConnectionStrength('none');
@@ -194,18 +194,19 @@ export default function Home() {
       setIsListening(false);
       return;
     }
-    const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition);
-    if (!SpeechRecognition) {
-      return;
-    }
-    const recognition = new SpeechRecognition();
+    const win = typeof window !== 'undefined' ? window : null;
+    const SR = win && ((win as unknown as { SpeechRecognition?: new () => { start(): void; stop(): void; onstart: () => void; onend: () => void; onresult: (e: unknown) => void; onerror: () => void; continuous: boolean; interimResults: boolean; lang: string } }).SpeechRecognition ?? (win as unknown as { webkitSpeechRecognition?: new () => { start(): void; stop(): void; onstart: () => void; onend: () => void; onresult: (e: unknown) => void; onerror: () => void; continuous: boolean; interimResults: boolean; lang: string } }).webkitSpeechRecognition);
+    if (!SR || !win) return;
+    const recognition = new SR();
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
+    recognition.onresult = (event: unknown) => {
+      const e = event as { results: { length: number; [i: number]: { [j: number]: { transcript: string } } } };
+      const last = e.results[e.results.length - 1];
+      const transcript = last?.[0]?.transcript ?? '';
       setSearchQuery((prev) => (prev ? `${prev} ${transcript}` : transcript));
     };
     recognition.onerror = () => setIsListening(false);
