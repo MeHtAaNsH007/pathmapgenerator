@@ -200,7 +200,9 @@ export default function Home() {
       {showGuide && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-3xl p-8 shadow-2xl">
-            <div className="text-blue-500 font-bold mb-2 tracking-widest text-xs uppercase">Welcome, Pioneer</div>
+            <div className="text-blue-500 font-bold mb-2 tracking-widest text-xs uppercase">
+              Hey {nickname || 'there'}, welcome to PROGATH — your own learning assistant
+            </div>
             <h2 className="text-3xl font-black mb-4 tracking-tight text-white">User Guide</h2>
             
             <div className="space-y-4 mb-8">
