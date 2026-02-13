@@ -3,9 +3,26 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function Home() {
-  const [showGuide, setShowGuide] = useState(false);
-  const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('progath_nickname') || '';
+  });
+  const [showNicknamePrompt, setShowNicknamePrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !(localStorage.getItem('progath_nickname') || '');
+  });
+  const [showGuide, setShowGuide] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedNickname = localStorage.getItem('progath_nickname');
+    const locationPromptSeen = localStorage.getItem('progath_location_prompt_seen');
+    if (savedNickname) {
+      if (typeof navigator !== 'undefined' && navigator.geolocation && !locationPromptSeen) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  });
   const [nicknameInput, setNicknameInput] = useState('');
   const [location, setLocation] = useState('PUNJAB,INDIA');
   const [coordinates, setCoordinates] = useState({ lat: 30.7333, lon: 76.7794 }); // Default Punjab coordinates
@@ -15,19 +32,44 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState('Intermediate');
   
   // Recent activity data - loaded from localStorage or empty array
-  const [recentActivity, setRecentActivity] = useState<Array<{ topic: string; timestamp: Date }>>([]);
+  const [recentActivity, setRecentActivity] = useState<Array<{ topic: string; timestamp: Date }>>(() => {
+    if (typeof window === 'undefined') return [];
+    const saved = localStorage.getItem('progath_recent_activity');
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved) as Array<{ topic: string; timestamp: string }>;
+      return parsed.map((a) => ({ topic: a.topic, timestamp: new Date(a.timestamp) }));
+    } catch {
+      return [];
+    }
+  });
   
   // Battery & network for header
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
-  const [connectionStrength, setConnectionStrength] = useState<'none' | 'low' | 'good'>('good');
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof navigator === 'undefined') return true;
+    return navigator.onLine;
+  });
+  const [connectionStrength, setConnectionStrength] = useState<'none' | 'low' | 'good'>(() => {
+    if (typeof navigator === 'undefined') return 'good';
+    const conn = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+    if (!navigator.onLine) return 'none';
+    const effectiveType = conn?.effectiveType;
+    if (effectiveType === 'slow-2g' || effectiveType === '2g') return 'low';
+    return 'good';
+  });
 
   // Search bar
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
 
   // Location prompt (show our message before browser permission)
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const savedNickname = localStorage.getItem('progath_nickname');
+    const locationPromptSeen = localStorage.getItem('progath_location_prompt_seen');
+    return Boolean(savedNickname && typeof navigator !== 'undefined' && navigator.geolocation && !locationPromptSeen);
+  });
   const [showMicPrompt, setShowMicPrompt] = useState(false);
 
   // Get icon letter from topic name
@@ -52,43 +94,7 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    // Check for saved nickname in localStorage
-    const savedNickname = localStorage.getItem('progath_nickname');
-    const locationPromptSeen = localStorage.getItem('progath_location_prompt_seen');
-    if (savedNickname) {
-      setNickname(savedNickname);
-      // Show location prompt once if never seen, else show guide
-      if (navigator.geolocation && !locationPromptSeen) {
-        setShowLocationPrompt(true);
-      } else {
-        setShowGuide(true);
-      }
-    } else {
-      setShowNicknamePrompt(true);
-    }
-    
-    // Load recent activity from localStorage
-    const savedActivity = localStorage.getItem('progath_recent_activity');
-    if (savedActivity) {
-      try {
-        const parsed = JSON.parse(savedActivity);
-        // Convert timestamp strings back to Date objects
-        const activities = parsed.map((activity: { topic: string; timestamp: string }) => ({
-          topic: activity.topic,
-          timestamp: new Date(activity.timestamp)
-        }));
-        setRecentActivity(activities);
-      } catch (error) {
-        console.error('Error loading recent activity:', error);
-        setRecentActivity([]);
-      }
-    }
-    
-    if (!navigator.geolocation) {
-      setLocation('PUNJAB,INDIA');
-    }
-  }, []);
+  useEffect(() => {}, []);
 
   const requestLocation = () => {
     setShowLocationPrompt(false);
@@ -156,8 +162,6 @@ export default function Home() {
           battery.addEventListener('levelchange', () => setBatteryLevel(Math.round(battery.level * 100)));
         })
         .catch(() => setBatteryLevel(null));
-    } else {
-      setBatteryLevel(null);
     }
   }, []);
 
@@ -182,9 +186,6 @@ export default function Home() {
         setConnectionStrength('good');
       }
     };
-
-    setIsOnline(navigator.onLine);
-    updateStrength();
 
     window.addEventListener('online', () => {
       setIsOnline(true);
@@ -276,6 +277,7 @@ export default function Home() {
   };
 
   const handleBeginConstruction = async () => {
+    if (!supabase) return;
     const payload = {
       nickname,
       location,
