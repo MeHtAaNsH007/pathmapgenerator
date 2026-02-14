@@ -1,11 +1,18 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://jtbyrnlbbxnjyipxajmt.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnlybmxiYnhuanlpcHhham10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5OTExMzMsImV4cCI6MjA4NjU2NzEzM30.xBKQ0Q2t54E93Ra_SEvi9cPp-1WtwvYmQU-ByWTydwQ';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function Home() {
   const [showGuide, setShowGuide] = useState(false);
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
   const [nickname, setNickname] = useState('');
   const [nicknameInput, setNicknameInput] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [location, setLocation] = useState('PUNJAB,INDIA');
   const [coordinates, setCoordinates] = useState({ lat: 30.7333, lon: 76.7794 }); // Default Punjab coordinates
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -272,6 +279,28 @@ export default function Home() {
       return;
     }
     startRecognition();
+  };
+
+  const handleBeginConstruction = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      const user = data.user;
+      if (user) {
+        const lat = coordinates.lat;
+        const lng = coordinates.lon;
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: user.id,
+          nickname: nickname,
+          location_name: location,
+          latitude: Number(lat),
+          longitude: Number(lng),
+        });
+        if (insertError) throw insertError;
+      }
+    } catch (err) {
+      alert(String((err as Error).message ?? err));
+    }
   };
 
   // Handle nickname submission
@@ -681,7 +710,23 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <button className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 active:scale-95 transition-all">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500 transition-all"
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <button onClick={handleBeginConstruction} className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 active:scale-95 transition-all">
                 Begin Construction
               </button>
             </div>
