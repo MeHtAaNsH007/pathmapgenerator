@@ -1,18 +1,23 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://jtbyrnlbbxnjyipxajmt.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0YnlybmxiYnhuanlpcHhham10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5OTExMzMsImV4cCI6MjA4NjU2NzEzM30.xBKQ0Q2t54E93Ra_SEvi9cPp-1WtwvYmQU-ByWTydwQ';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient( supabaseUrl, supabaseKey);
 
 export default function Home() {
+  const router = useRouter();
   const [showGuide, setShowGuide] = useState(false);
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false);
   const [nickname, setNickname] = useState('');
   const [nicknameInput, setNicknameInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isConstructing, setIsConstructing] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [location, setLocation] = useState('PUNJAB,INDIA');
   const [coordinates, setCoordinates] = useState({ lat: 30.7333, lon: 76.7794 }); // Default Punjab coordinates
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -282,6 +287,7 @@ export default function Home() {
   };
 
   const handleBeginConstruction = async () => {
+    setIsConstructing(true);
     try {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
@@ -297,9 +303,38 @@ export default function Home() {
           longitude: Number(lng),
         });
         if (insertError) throw insertError;
+        alert('Success');
+        router.push('/');
       }
     } catch (err) {
       alert(String((err as Error).message ?? err));
+    } finally {
+      setIsConstructing(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setIsConstructing(true);
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (data.session) {
+          if (searchQuery && searchQuery.trim()) {
+            try { localStorage.setItem('progath_topic', searchQuery.trim()); } catch {}
+          }
+          router.push('/dashboard');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert('Signed up successfully');
+        setIsLogin(true);
+      }
+    } catch (err) {
+      alert(String((err as Error).message ?? err));
+    } finally {
+      setIsConstructing(false);
     }
   };
 
@@ -726,8 +761,19 @@ export default function Home() {
                   className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500 transition-all"
                 />
               </div>
-              <button onClick={handleBeginConstruction} className="w-full md:w-auto bg-blue-600 px-12 py-4 rounded-xl font-bold hover:bg-blue-500 active:scale-95 transition-all">
-                Begin Construction
+              <button
+                onClick={handleLogin}
+                disabled={isConstructing}
+                className={`w-full md:w-auto px-12 py-4 rounded-xl font-bold active:scale-95 transition-all ${isConstructing ? 'bg-zinc-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'}`}
+              >
+                {isConstructing ? 'Constructing...' : (isLogin ? 'Log In' : 'Sign Up')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLogin((v) => !v)}
+                className="w-full md:w-auto bg-transparent text-zinc-400 text-xs hover:text-white transition-all mt-2"
+              >
+                {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Log In'}
               </button>
             </div>
             
@@ -738,7 +784,17 @@ export default function Home() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Web Development */}
-                <button className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-blue-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-blue-500/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('progath_topic', 'Web Development');
+                      localStorage.setItem('progath_quickstart', 'Web Development');
+                    } catch {}
+                    router.push('/dashboard');
+                  }}
+                  className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-blue-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-blue-500/10"
+                >
                   <div className="flex flex-col items-center text-center space-y-3">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -754,7 +810,17 @@ export default function Home() {
                 </button>
 
                 {/* Data Science */}
-                <button className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-purple-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-purple-500/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('progath_topic', 'Data Science');
+                      localStorage.setItem('progath_quickstart', 'Data Science');
+                    } catch {}
+                    router.push('/dashboard');
+                  }}
+                  className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-purple-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-purple-500/10"
+                >
                   <div className="flex flex-col items-center text-center space-y-3">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -770,7 +836,17 @@ export default function Home() {
                 </button>
 
                 {/* UI/UX Design */}
-                <button className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-pink-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-pink-500/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('progath_topic', 'UI/UX Design');
+                      localStorage.setItem('progath_quickstart', 'UI/UX Design');
+                    } catch {}
+                    router.push('/dashboard');
+                  }}
+                  className="group relative bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-pink-500/50 hover:bg-zinc-900 transition-all hover:shadow-lg hover:shadow-pink-500/10"
+                >
                   <div className="flex flex-col items-center text-center space-y-3">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center shadow-lg shadow-pink-500/30 group-hover:scale-110 transition-transform">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
